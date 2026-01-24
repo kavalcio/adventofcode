@@ -9,12 +9,14 @@ for i in range(len(lines)):
 area = 0
 
 edges = []
-# TODO: create list of edges of the valid area
+# Create list of edges of the valid area
 for i in range(len(lines) - 1):
   edges.append({ 'x1': lines[i][0], 'x2': lines[i+1][0], 'y1': lines[i][1], 'y2': lines[i+1][1] })
+# Loop around at the end, connecting last vertex with first vertex
+edges.append({ 'x1': lines[-1][0], 'x2': lines[0][0], 'y1': lines[-1][1], 'y2': lines[0][1] })
 
-
-def check_intersection(line1, line2):
+# def check_intersection(line1, line2):
+  
   
 
 for i in range(len(lines)):
