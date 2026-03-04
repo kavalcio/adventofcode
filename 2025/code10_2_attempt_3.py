@@ -1,4 +1,4 @@
-# https://www.reddit.com/r/adventofcode/comments/1pity70/comment/nt8ve95/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+# Attempt at solution using system of linear equations, optimizes using free variables but can't deal with the case where initial solution (0 for all free vars) is invalid
 
 import sympy as sp
 import copy
@@ -164,7 +164,7 @@ def calculate_press_count(buttons, joltages, n, detailed_logs):
 # print('result', result)
 
 # Test individual line
-# calculate_press_count(buttons_list[1], joltage_list[1], 1, True)
-calculate_press_count(buttons_list[9], joltage_list[9], 9, True)
+calculate_press_count(buttons_list[1], joltage_list[1], 1, True)
+# calculate_press_count(buttons_list[9], joltage_list[9], 9, True)
 
 # 17908 too high

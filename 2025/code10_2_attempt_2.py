@@ -1,3 +1,5 @@
+# Attempt at solution using system of linear equations, can't deal with free variables
+
 # https://www.reddit.com/r/adventofcode/comments/1pity70/comment/nt8ve95/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
 
 import sympy as sp

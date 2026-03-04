@@ -13,3 +13,8 @@ To run an individual script, cd into its directory and run:
 ```
 python3 <script_name>
 ```
+
+To update requirements.txt:
+```
+pip freeze > requirements.txt
+```
