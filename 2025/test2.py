@@ -1,6 +1,7 @@
 # https://www.reddit.com/r/adventofcode/comments/1pity70/comment/nt8ve95/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
 
 import sympy as sp
+import copy
 
 f = open('./input10.txt')
 lines = f.readlines()
@@ -17,18 +18,52 @@ for i in range(len(lines)):
   buttons_list.append(buttons)
   joltage_list.append(joltages)
 
-def check_solution(values, matrix):
-  height = matrix.shape[0]
-  width = matrix.shape[1]
+# Given a dict of values for each free variable, an array of pivot indexes, and the solution matrix:
+# - Compute the values of each variable. If any are below 0, return false (no solution)
+# - Otherwise return the total press count which is the sum of all variables, including the free variables
+def test_solution(free_variable_values, pivots, m_rref):
+  press_list = [] # Number of times each button in the list is pressed
+  for i, p in enumerate(pivots):
+    # Press count is the final number in the row, minus the difference caused by any free variables
+    # Don't forget to check press_count is above zero. If not, break.
+    press_count = m_rref[i, m_rref.shape[1] - 1]
+    pivot_col_index = m_rref.row(i).tolist()[0].index(1)
 
-  for y in range(height):
-    target = matrix[y, width - 1]
-    m_row = matrix.row(y).tolist()[0]
-    value_sum = sum([v * m_row[i] for i, v in enumerate(values)])
-    if target != value_sum:
+    # Loop through free variables
+    for j in range(pivot_col_index + 1, m_rref.shape[1] - 1):
+      free_var_coeff = m_rref[i, j]
+      free_var_value = free_variable_values.get(j)
+
+      # If free variable is 0, no need to do anything else
+      if free_var_value == None:
+        continue
+      diff = free_var_coeff * free_var_value
+
+      # Add up the difference caused by the value of the free variable
+      press_count -= diff
+      # print('col', i, j, free_var_coeff, free_var_value, 'diff', diff, press_count)
+
+    if press_count < 0:
+      print('Too far', i, p)
       return False
-  return True
+    press_list.append(press_count)
 
+  # Add the number of presses of the free variable itself
+  for f in list(free_variable_values.values()):
+    press_list.append(f)
+
+  # Based on number of free variables, generate list of possible solutions
+  # possible_solutions = []
+  # if len(free_variables) == 0:
+  #   possible_solutions.append([x[0] for x in m_rref.col(m_rref.shape[1] - 1).tolist()])
+  # else:
+
+  total = sum(press_list)
+  return total
+
+# Build a system of equations for an input row to find its possible solutions.
+# For each possible solution, plug values into test_solution.
+# Test every valid solution, then return the smallest total press count computed.
 def calculate_press_count(buttons, joltages, n, detailed_logs):
   # Build matrix to solve system of equations
   rows = []
@@ -58,55 +93,68 @@ def calculate_press_count(buttons, joltages, n, detailed_logs):
   # - If there are multiple free variables with coefficients that add up the >= 2, then we need to check every combination of valid values between all of them
   # - We should pick the values that minimize the sum of clicks for each button
 
-  # TODO: Example values, replace with calculation to get real values
-  free_variable_values = {
-    6: 3,
-    7: 0
-  }
+  # Find free variables that have a coefficient sum >= 2
+  # Create a dict where each starts at 0. Plug the values into test_solution and get a sum value in return
+  # Keep track of the lowest result returned. Keep incrementing values in the dict until test_solution returns False
+  # Return the lowest result.
 
-  press_list = [] # Number of times each button in the list is pressed
-  for i, p in enumerate(pivots):
-    # Press count is the final number in the row, minus the difference caused by any free variables
-    # Don't forget to check press_count is above zero. If not, break.
-    press_count = m_rref[i, m_rref.shape[1] - 1]
-    pivot_col_index = m_rref.row(i).tolist()[0].index(1)
+  potential_free_variable_solutions = []
+  parsed_solutions = []
 
-    # Loop through free variables
-    for j in range(pivot_col_index + 1, m_rref.shape[1] - 1):
-      free_var_coeff = m_rref[i, j]
-      free_var_value = free_variable_values.get(j)
+  free_variables_to_parse_through = []
+  for v in free_variables:
+    coefficient_sum = sum([x[0] for x in m_rref.col(v).tolist()])
+    if coefficient_sum >= 2:
+      free_variables_to_parse_through.append(v)
+  # print('free_variables_to_parse_through', free_variables_to_parse_through)
 
-      # If free variable is 0, no need to do anything else
-      if free_var_value == None:
+  # Start with initial solution where all free variables = 0
+  sol = {}
+  for v in free_variables_to_parse_through:
+    sol[v] = 0
+  potential_free_variable_solutions.append(sol)
+
+  min_presses = 1000000000
+  while len(potential_free_variable_solutions) > 0:
+    # Pop first solution off the top of the queue, add it to parsed solutions
+    sol = potential_free_variable_solutions.pop(0)
+    parsed_solutions.append(sol)
+    print('sol', sol)
+
+    result = test_solution(sol, pivots, m_rref)
+
+    # If solution is invalid, this is a dead end. Continue parsing through other existing solutions
+    if result == False:
+      continue
+
+    # If solution is valid, continue exploring this path by pushing more possible solutions onto the queue (if it hasn't been parsed yet)
+    for v in free_variables_to_parse_through:
+      newsol = copy.deepcopy(sol)
+      newsol[v] += 1
+      if any(s == newsol for s in parsed_solutions) or any(s == newsol for s in potential_free_variable_solutions):
         continue
-      diff = free_var_coeff * free_var_value
+      potential_free_variable_solutions.append(newsol)
 
-      # Add up the difference caused by the value of the free variable
-      press_count -= diff
-      # print('col', i, j, free_var_coeff, free_var_value, 'diff', diff, press_count)
+    # If new solution is better than the current best, save it
+    if result < min_presses:
+      print('>>> new best solution', result)
+      min_presses = result
 
-    press_list.append(press_count)
+  # min_presses = 1000000000
+  # for s in potential_free_variable_solutions:
+  #   result = test_solution(s, pivots, m_rref)
+  #   if result == False:
+  #     continue
+  #   if result < min_presses:
+  #     print('new best solution', result)
+  #     min_presses = result
 
-  # Add the number of presses of the free variable itself
-  for f in list(free_variable_values.values()):
-    press_list.append(f)
-
-  # Based on number of free variables, generate list of possible solutions
-  # possible_solutions = []
-  # if len(free_variables) == 0:
-  #   possible_solutions.append([x[0] for x in m_rref.col(m_rref.shape[1] - 1).tolist()])
-  # else:
+  # total_presses = test_solution(free_variable_values, pivots, m_rref) 
+  print('Line', n+1, '->', min_presses)
+  return min_presses
 
 
 
-  # TODO: Brute force parse through solutions and find once with smallest button press count
-
-  sol = check_solution([23,15,6,10,20,4,0,0,13], m_rref)
-  print('sol', sol)
-
-  total = sum(press_list)
-  # print('Line', n+1, '-', total)
-  return total
 
 # Go through list of inputs, calculate press count for each input and add up results
 # result = 0
@@ -116,6 +164,7 @@ def calculate_press_count(buttons, joltages, n, detailed_logs):
 # print('result', result)
 
 # Test individual line
-calculate_press_count(buttons_list[1], joltage_list[1], 1, True)
+# calculate_press_count(buttons_list[1], joltage_list[1], 1, True)
+calculate_press_count(buttons_list[9], joltage_list[9], 9, True)
 
 # 17908 too high

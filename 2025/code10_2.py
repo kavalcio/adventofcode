@@ -1,3 +1,5 @@
+# Brute force solution, too slow to be feasible
+
 import numpy
 import itertools
 from functools import cache
@@ -16,9 +18,6 @@ for i in range(len(lines)):
   joltages = [int(x) for x in sections[-1][1:-1].split(',')]
   buttons_list.append(buttons)
   joltage_list.append(joltages)
-
-# print('buttons_list', buttons_list)
-# print('joltage_list', joltage_list)
 
 total_presses = 0
 
