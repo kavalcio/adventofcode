@@ -1,5 +1,6 @@
 import numpy
 import itertools
+from functools import cache
 
 f = open('./input10.txt')
 lines = f.readlines()
@@ -21,18 +22,17 @@ for i in range(len(lines)):
 
 total_presses = 0
 
-def check_match(joltages_target, buttons, button_presses):
+def check_match_improved(joltages_target, buttons, button_presses):
   joltages_current = [0 for i in joltages_target]
   # Loop through each button
   for b in range(len(buttons)):
     press_count = button_presses[b]
     if press_count == 0: continue
-    # Loop through the times the button is pressed
-    for i in range(press_count):
-      affected_joltages = buttons[b]
-      # Loop through the joltages that the button affects, and increment them
-      for j in affected_joltages:
-        joltages_current[j] += 1
+    # Loop through the joltages that the button affects, and increment them
+    affected_joltages = buttons[b]
+    for j in affected_joltages:
+      joltages_current[j] += press_count
+    
   # Check if current jotalge configuration matches target
   return joltages_current == joltages_target
 
@@ -51,9 +51,10 @@ for i in range(len(lines)):
 
     # For current presses count, try every combination of button presses and check for a match
     sequences = numpy.array(list(generate_button_press_sequences(len(buttons), presses)))
+    print('i', i, presses, len(sequences))
     for s, sequence in enumerate(sequences):
-      print('i', i, presses, sequence)
-      match_found = check_match(joltages, buttons, sequence)
+      # print('i', i, presses, sequence)
+      match_found = check_match_improved(joltages, buttons, sequence)
       if match_found: break
 
     if match_found:
